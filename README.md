@@ -1,2 +1,9 @@
-# gpu_scraping
-Repository for website scraping GPU information from Newegg using R. Modeling still to be determined.
+# Newegg GPU Scraping
+
+---
+
+## Tasks: 
+- [ ] Create Scraping Script using Rvest.
+- [ ] Create Data Processing Script (Cleaning)
+- [ ] Create Exploratory Data Analysis Script
+- [ ] Create Modeling Script (Options: Rating Prediction, Price Prediction, Custering, etc.)
