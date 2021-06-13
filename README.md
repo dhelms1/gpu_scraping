@@ -1,5 +1,7 @@
 # Newegg GPU Scraping
 
+![](figures/banner.jpg)
+
 ---
 
 ## Tasks: 
