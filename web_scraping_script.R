@@ -2,6 +2,7 @@ library(rvest)
 library(dplyr)
 library(janitor)
 library(tibble)
+library(naniar)
 
 `%notin%` <- Negate(`%in%`) # create negation function to test if column not in data frame
 
@@ -29,20 +30,8 @@ get_gpu_ratings <- function(gpu_link) {
 
 get_gpu_pricing <- function(page_link) {
   page <- read_html(page_link)
-  tmp_df <- data.frame('OriginalPrice' = page %>% html_nodes('.price-current') %>% html_text())
-  tmp_df$Savings <- page %>% html_nodes('.price-save') %>% html_text()
-  sale_prices <- page %>% html_nodes('.price-was-data') %>% html_text()
-  price_idx <- 1
-  tmp_df$CurrentPrice <- rep(NA, nrow(tmp_df))
-  for (i in 1:nrow(tmp_df)) {
-    if (tmp_df$Savings[i] == "") {
-      tmp_df$CurrentPrice[i] <- tmp_df$OriginalPrice[i]
-    }
-    else {
-      tmp_df$CurrentPrice[i] <- sale_prices[price_idx]
-      price_idx <- price_idx + 1
-    }
-  }
+  tmp_df <- data.frame('Price' = page %>% html_nodes('.price-current') %>% html_text())
+  tmp_df$CurrentSavings <- page %>% html_nodes('.price-save') %>% html_text()
   tmp_df$Shipping <- page %>% html_nodes('.price-ship') %>% html_text()
   tmp_df
 }
@@ -65,28 +54,33 @@ rating_df <- data.frame('AvgRating' = character(),
                         'NumberOfRatings' = character())
 
 # Create empty data frame for GPU pricing information
-pricing_df <- data.frame('OriginalPrice' = character(),
-                         'Savings' = character(),
-                         'CurrentPrice' = character(),
+pricing_df <- data.frame('Price' = character(),
+                         'CurrentSavings' = character(),
                          'Shipping' = character())
 
-# Run scraper over given number of pages (36 results per page for 30 pages = 1080 observations)
-# I broke up the page into groups of 5 which I will run every few hours so that I'm not 
-# creating too many requests at once (I think this should be enough spacing)
-page_1_to_5 <- 1:5
-page_6_to_10 <- 6:10
-page_11_to_15 <- 11:15
-page_16_to_20 <- 16:20
-page_21_to_25 <- 21:25
-page_26_to_30 <- 26:30
+# Run scraper over given page number
+page_num <- 7
+link <- paste0("https://www.newegg.com/Desktop-Graphics-Cards/SubCategory/ID-48/Page-", page_num, "?Tid=7709")
+gpu_links <- read_html(link) %>% html_nodes("a.item-title") %>% html_attr("href")
+pricing_df <- rbind(get_gpu_pricing(link), pricing_df)
+gpu_df <- rbind(t(sapply(gpu_links, FUN = get_model_info, USE.NAMES = FALSE)), gpu_df)
+rating_df <- rbind(t(sapply(gpu_links, FUN = get_gpu_ratings, USE.NAMES = FALSE)), rating_df)
+page_df <- data.frame(Page=rep(page_num, length(gpu_links))) # create page number column
+link_df <- data.frame(URL=gpu_links) # create column for original gpu links
 
-for (page_num in page_1_to_5) {
-  link <- paste0("https://www.newegg.com/Desktop-Graphics-Cards/SubCategory/ID-48/Page-", page_num, "?Tid=7709")
-  gpu_links <- read_html(link) %>% html_nodes("a.item-title") %>% html_attr("href")
-  pricing_df <- rbind(get_gpu_pricing(link), pricing_df)
-  gpu_df <- rbind(t(sapply(gpu_links, FUN = get_model_info, USE.NAMES = FALSE)), gpu_df)
-  rating_df <- rbind(t(sapply(gpu_links, FUN = get_gpu_ratings, USE.NAMES = FALSE)), rating_df)
+# Combine all into final DF with 18 features. Change all columns to character (issue with writing since
+# some columns were "list" class). NA's were replaced with "NA", so reverse this with naniar function
+current_final_df <- read.csv('data\\gpu_raw_data.csv')
+new_data_df <- cbind(page_df, link_df, gpu_df, pricing_df, rating_df)
+new_data_df <- new_data_df %>% mutate(across(everything(), as.character)) %>% replace_with_na_all(condition = ~.x == 'NA')
+if (exists('current_final_df')) {
+  colnames(new_data_df) <- colnames(current_final_df)
+  final_df <- rbind(current_final_df, new_data_df)
 }
 
+# Make sure data is in correct format before overwriting previous final data
+write.csv(final_df, 'data\\gpu_raw_data.csv', row.names = FALSE)
 
-final_df <- cbind(gpu_df, pricing_df, rating_df) # combine all into final DF with 17 features and 1080 observations
+
+
+
