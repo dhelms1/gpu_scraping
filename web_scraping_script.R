@@ -8,6 +8,7 @@ library(naniar)
 
 get_model_info <- function(gpu_link) {
   # Pull information from the "Specs" tab
+  print(gpu_link)
   cols <- c('Brand', 'Model', 'Chipset Manufacturer', 'GPU Series', 'GPU', 'Core Clock', 'Boost Clock', 
             'Memory Size', 'Memory Interface', 'Memory Type', 'Date First Available')
   model_info <- read_html(gpu_link) %>% html_nodes("table , #product-mini-feature .tab-nav:nth-child(2)") %>% html_table(fill=TRUE)
@@ -59,7 +60,7 @@ pricing_df <- data.frame('Price' = character(),
                          'Shipping' = character())
 
 # Run scraper over given page number
-page_num <- 7
+page_num <- 10
 link <- paste0("https://www.newegg.com/Desktop-Graphics-Cards/SubCategory/ID-48/Page-", page_num, "?Tid=7709")
 gpu_links <- read_html(link) %>% html_nodes("a.item-title") %>% html_attr("href")
 pricing_df <- rbind(get_gpu_pricing(link), pricing_df)
@@ -80,7 +81,3 @@ if (exists('current_final_df')) {
 
 # Make sure data is in correct format before overwriting previous final data
 write.csv(final_df, 'data\\gpu_raw_data.csv', row.names = FALSE)
-
-
-
-
