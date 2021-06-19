@@ -16,7 +16,7 @@ The following are descriptions for each feature in the data set and their units 
 - **OC Boost Clock** - Overclocked Boost Clock speed, measured in MHz (*numeric*).
 - **Memory Size** - Size of Memory for GPU, measured in GB (*numeric*).
 - **Memory Interface** - Bit width of the memory bus for the GPU (*character*).
-- **Memory Type* - Type of RAM used within the GPU (*character*).
+- **Memory Type** - Type of RAM used within the GPU (*character*).
 - **Month** - Month the GPU became first available (*numeric*).
 - **Year** - Year the GPU became first available (*numeric*).
 - **Price** - Current price at the time of scraping, this is the sale price if on sale (*numeric*).
