@@ -20,6 +20,7 @@ The following are descriptions for each feature in the data set and their units 
 - **Month** - Month the GPU became first available (*numeric*).
 - **Year** - Year the GPU became first available (*numeric*).
 - **Price** - Current price at the time of scraping, this is the sale price if on sale (*numeric*).
+- **CurrentSavings** - Current sale at the time of scraping measured in % off, reflected in price (*numeric*).
 - **Shipping** - Cost of shipping at the time of scraping (*numeric*).
 - **AvgRating** - Average Rating for the given GPU, measured on a scale from 0 to 5 (*numeric*).
 - **NumberOfRatings** - Number of ratings that compose the Average Rating score (*numeric*).
