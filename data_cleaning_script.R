@@ -53,6 +53,12 @@ raw.data <- raw.data %>% mutate(NumberOfRatings=as.numeric(gsub("\\(|\\)", "", N
 raw.data <- raw.data %>% mutate(na.percent=round(rowSums(is.na(.))/ncol(.), 4)*100) %>% 
   filter(na.percent < 30) %>% select(-na.percent) # 351 -> 288
 
+# Fix two observations (issue with GHz not MHz)
+raw.data[247, c(8:11, 13, 17)] <- c(1200, NA, 1460, NA, '3072-Bit', 3390.00)
+raw.data[163, c(8:11)] <- c(1050, NA, 1180, NA)
+
+raw.data[, c(8:11, 17)] <- sapply(raw.data[, c(8:11, 17)], as.numeric)
+
 # Save final data set
 write.csv(raw.data, 'data\\gpu_cleaned_data.csv', row.names = FALSE)
 
