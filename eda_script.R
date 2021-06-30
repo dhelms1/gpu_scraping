@@ -1,6 +1,8 @@
 library(ggplot2)
 library(dplyr)
 library(sjPlot)
+library(tidyverse)
+library(kableExtra)
 
 set_theme(
   base = theme_sjplot(),
@@ -108,15 +110,54 @@ ggsave("figures/Shipping.png", width=8, height=4, units="in", dpi = 100)
 
 
 # Average Rating (P7a)
-
+plot_frq(data$AvgRating, type='histogram', show.mean=TRUE, show.mean.val = FALSE, geom.colors='#EBE414', title='Average Rating') + xlab('')
+ggsave("figures/Rating.png", width=3.5, height=5, units="in", dpi = 100)
 
 # Number of Ratings (P7b)
-
-
+plot_frq(data$NumberOfRatings, type='histogram', show.mean=TRUE, show.mean.val = FALSE, geom.colors='#14EB35', title='Number of Ratings') + xlab('')
+ggsave("figures/NumRating.png", width=3.5, height=5, units="in", dpi = 100)
 
 
 
 ###################################################### ADVANCE EXPLORATION ######################################################
+
+## BRAND
+top.4.brands <- names(sort(table(data$Brand), decreasing = TRUE))[1:4]
+tmp <- aggregate(Price ~ Year + Brand, data=data, FUN=mean, na.rm=TRUE) %>% arrange(Brand) %>% filter(Brand %in% top.4.brands)
+ggplot(tmp, aes(x=Year, y=Price, colour=Brand)) + geom_line(size=1, alpha=0.5) + geom_point(size=2.5) + ggtitle('Yearly Average Price Per Brand (Top 4)')
+ggsave("figures/BrandYearPrice.png", width=7, height=5, units="in", dpi = 100)
+
+
+data %>% select(Brand, AvgRating) %>% filter(Brand %in% top.4.brands) %>% group_by(Brand) %>% 
+  summarise(Rating=mean(AvgRating, na.rm=TRUE)) %>% arrange(desc(Rating)) %>%
+  kable() %>% kable_styling(bootstrap_options = c("striped", "bordered")) %>% save_kable("figures/BrandRatings.png")
+
+
+## GPU
+data %>% select(GPU, Price) %>% group_by(GPU) %>% summarise(AvgPrice=round(mean(Price, na.rm=TRUE))) %>% 
+  arrange(desc(AvgPrice)) %>% slice_max(n=15, order_by = AvgPrice) %>%
+  {ggplot(., aes(x=factor(GPU, levels=GPU), y=AvgPrice)) + 
+      geom_segment(aes(x=factor(GPU, levels=GPU), xend=factor(GPU, levels=GPU), y=0, yend=AvgPrice), color="grey", size=1) + 
+      geom_point(color="#0995C5", size=3) +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) + 
+      geom_text(aes(y=AvgPrice + 220, label=AvgPrice), size = 3.5) + xlab('') + ylab('Average Price') + 
+      ggtitle('Top 15 Most Expensive GPUs (on Average)')}
+ggsave("figures/ExpGpu.png", width=7, height=6, units="in", dpi = 100)
+
+data %>% select(GPU, AvgRating, NumberOfRatings) %>% group_by(GPU) %>% 
+  summarise(Rating=round(mean(AvgRating, na.rm=TRUE), 2),
+            NumRates=sum(NumberOfRatings, na.rm=TRUE)) %>% 
+  arrange(desc(Rating)) %>% filter(NumRates > 30) %>% slice_max(n=15, order_by = Rating) %>%
+  kable() %>% kable_styling(bootstrap_options = c("striped", "bordered")) %>% save_kable("figures/GPURatings.png")
+
+
+## GPU Series
+data %>% filter(GPU.Series %in% names(sort(table(data$GPU.Series), decreasing = TRUE))[1:6]) %>% 
+  select(GPU.Series, Core.Clock, Boost.Clock, Memory.Size, Price, AvgRating) %>%
+  aggregate(cbind(Core.Clock,Boost.Clock,Memory.Size,Price,AvgRating) ~ GPU.Series, data=., mean, na.rm=TRUE) %>%
+  mutate(Freq=as.numeric(lapply(GPU.Series, function(x) sort(table(data$GPU.Series)[x], decreasing = TRUE)))) %>%
+  arrange(desc(Freq)) %>% kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "bordered")) %>% save_kable("figures/SeriesSpecs.png")
 
 
 
